@@ -189,6 +189,10 @@
                             <i class="fas fa-download"></i>
                             <span>บันทึกทั้งหมด</span>
                         </button>
+                        <button id="copy-all-segments" class="simple-button py-3 px-4 rounded-xl font-semibold text-indigo-600 border border-indigo-300 transition-all flex items-center justify-center gap-2">
+                            <i class="fas fa-copy"></i>
+                            <span>คัดลอกทุกช่วง</span>
+                        </button>
                         <button id="clear-button" class="simple-button py-3 px-4 rounded-xl font-semibold text-red-600 border border-red-300 transition-all flex items-center justify-center gap-2">
                             <i class="fas fa-trash"></i>
                             <span>ล้างข้อความ</span>
@@ -637,6 +641,11 @@
                         updateSegmentNumbers();
                     });
                     
+                    // Clear the main transcript textbox after saving the segment
+                    transcriptOutput.value = '';
+                    finalTranscript = '';
+                    updateCounter();
+                    
                     segmentCounter++;
                 } else {
                     alert('ไม่มีข้อความให้บันทึก');
@@ -657,20 +666,7 @@
                 segmentCounter = allSegments.length + 1;
             }
             
-            saveButton.addEventListener('click', () => {
-                const textToSave = transcriptOutput.value;
-                if (textToSave) {
-                    const blob = new Blob([textToSave], { type: 'text/plain;charset=utf-8' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'ถอดความ_ทั้งหมด.txt';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }
-            });
+            // Add event listener for copy all segments button\n            const copyAllSegmentsButton = document.getElementById('copy-all-segments');\n            \n            copyAllSegmentsButton.addEventListener('click', () => {\n                if (savedSegments.length === 0) {\n                    alert('ยังไม่มีช่วงข้อความที่บันทึกไว้');\n                    return;\n                }\n                \n                // Combine all segments with clear separators\n                let allSegmentsText = '';\n                savedSegments.forEach((segment, index) => {\n                    allSegmentsText += `--- ช่วงที่ ${index + 1} ---\\n${segment.text}\\n\\n`;\n                });\n                \n                // Create a temporary textarea to copy the text\n                const tempTextarea = document.createElement('textarea');\n                tempTextarea.value = allSegmentsText;\n                document.body.appendChild(tempTextarea);\n                tempTextarea.select();\n                tempTextarea.setSelectionRange(0, 99999); // For mobile devices\n                \n                try {\n                    document.execCommand('copy');\n                    alert(`คัดลอก ${savedSegments.length} ช่วงเรียบร้อยแล้ว!`);\n                } catch (err) {\n                    console.error('Failed to copy segments: ', err);\n                    alert('ไม่สามารถคัดลอกข้อความได้');\n                }\n                \n                document.body.removeChild(tempTextarea);\n            });\n            \n            saveButton.addEventListener('click', () => {\n                const textToSave = transcriptOutput.value;\n                if (textToSave) {\n                    const blob = new Blob([textToSave], { type: 'text/plain;charset=utf-8' });\n                    const url = URL.createObjectURL(blob);\n                    const a = document.createElement('a');\n                    a.href = url;\n                    a.download = 'ถอดความ_ทั้งหมด.txt';\n                    document.body.appendChild(a);\n                    a.click();\n                    document.body.removeChild(a);\n                    URL.revokeObjectURL(url);\n                }\n            });
 
             readAloudButton.addEventListener('click', () => {
                 if (synth.speaking) {
