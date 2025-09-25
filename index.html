@@ -442,7 +442,8 @@
 
             let isListening = false;
             let isUserStopped = false; // Track if user manually stopped
-            let previousTranscript = ''; // Store the transcript before recognition restarts
+            let finalTranscript = '';
+            let restartTimeout = null; // Store timeout reference to prevent multiple restarts
 
             recognition.lang = 'th-TH'; // Set default to Thai
             recognition.interimResults = true;
@@ -455,43 +456,22 @@
 
             recognition.onresult = (event) => {
                 let interimTranscript = '';
-                let newFinalTranscript = '';
-
+                
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {
-                        newFinalTranscript += event.results[i][0].transcript + ' ';
+                        finalTranscript += event.results[i][0].transcript + ' ';
                     } else {
                         interimTranscript += event.results[i][0].transcript;
                     }
                 }
-
-                // Only append new final transcript to previous, avoiding duplication
-                const currentText = transcriptOutput.value;
-                const startIndex = currentText.lastIndexOf(previousTranscript);
                 
-                if (startIndex === -1 || previousTranscript === '') {
-                    // If previous transcript is not found in current text, append new final transcript
-                    transcriptOutput.value = currentText + newFinalTranscript;
-                } else {
-                    // Replace the previous transcript with the new one to avoid duplication
-                    const newText = currentText.substring(0, startIndex) + 
-                                   currentText.substring(startIndex + previousTranscript.length) + 
-                                   newFinalTranscript;
-                    transcriptOutput.value = newText;
-                }
-                
-                // Update the previous transcript for next comparison
-                previousTranscript = newFinalTranscript;
-                
-                if (interimTranscript) {
-                    transcriptOutput.value += interimTranscript;
-                }
-                
+                transcriptOutput.value = finalTranscript + interimTranscript;
                 updateCounter();
             };
 
             recognition.onstart = () => {
                 isListening = true;
+                isUserStopped = false; // Reset when actually starting
                 listenText.textContent = 'หยุดฟัง';
                 listenButton.classList.remove('text-green-600', 'border-green-200', 'hover:bg-green-50');
                 listenButton.classList.add('text-red-600', 'border-red-200', 'hover:bg-red-50');
@@ -499,26 +479,24 @@
             };
 
             recognition.onend = () => {
-                // Check if the user manually stopped before handling auto-restart
                 if (isUserStopped) {
-                    // User manually stopped, reset the flag and don't restart
-                    isUserStopped = false;
+                    // User manually stopped
                     isListening = false;
                     listenText.textContent = 'เริ่มฟัง';
                     listenButton.classList.remove('text-red-600', 'border-red-200', 'hover:bg-red-50');
                     listenButton.classList.add('text-green-600', 'border-green-200', 'hover:bg-green-50');
                     listeningIndicator.classList.add('hidden');
                 } else {
-                    // Recognition stopped automatically (e.g., by browser), restart if still in listening mode
-                    if (isListening) {
-                        // Add a small delay before restarting to avoid rapid restart loops
-                        setTimeout(() => {
-                            if (isListening && !isUserStopped) {
-                                recognition.lang = langSelect.value;
-                                recognition.start();
-                            }
-                        }, 300);
+                    // Recognition ended automatically (e.g., timeout), restart after a delay
+                    if (restartTimeout) {
+                        clearTimeout(restartTimeout);
                     }
+                    restartTimeout = setTimeout(() => {
+                        if (isListening && !isUserStopped) {
+                            recognition.lang = langSelect.value;
+                            recognition.start();
+                        }
+                    }, 300);
                 }
             };
 
@@ -526,16 +504,17 @@
                 console.error('Speech recognition error:', event.error);
                 if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
                     alert('โปรดอนุญาตให้เว็บไซต์เข้าถึงไมโครโฟนของคุณ');
-                    isUserStopped = true; // Treat as user stopped on permission error
-                } else if (event.error === 'no-speech') {
-                    // No speech detected, continue listening if user hasn't stopped
-                    if (isListening && !isUserStopped) {
+                    isUserStopped = true;
+                    recognition.stop();
+                } else if (event.error === 'no-speech' || event.error === 'audio-capture') {
+                    // If no speech detected or audio capture issues, try to restart
+                    if (isListening && !isUserStopped && !isUserStopped) {
                         setTimeout(() => {
                             if (isListening && !isUserStopped) {
                                 recognition.lang = langSelect.value;
                                 recognition.start();
                             }
-                        }, 300);
+                        }, 500);
                     }
                 }
             };
@@ -544,11 +523,12 @@
                 if (isListening) {
                     // User manually stopping
                     isUserStopped = true;
+                    if (restartTimeout) {
+                        clearTimeout(restartTimeout);
+                    }
                     recognition.stop();
                 } else {
                     // User starting
-                    isUserStopped = false;
-                    isListening = true;
                     recognition.lang = langSelect.value;
                     recognition.start();
                 }
@@ -584,7 +564,7 @@
             });
 
             clearButton.addEventListener('click', () => {
-                previousTranscript = '';
+                finalTranscript = '';
                 transcriptOutput.value = '';
                 updateCounter();
             });
