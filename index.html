@@ -97,6 +97,16 @@
         .transition-all {
             transition: all 0.2s;
         }
+        
+        /* Apple-style loading animation */
+        .loading-pulse {
+            animation: loadingPulse 1s infinite ease-in-out;
+        }
+        
+        @keyframes loadingPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
@@ -453,6 +463,16 @@
                 
                 // Auto-scroll to the end to show the latest text
                 transcriptOutput.scrollTop = transcriptOutput.scrollHeight;
+                
+                // Update the listening indicator to show activity
+                if (!listeningIndicator.classList.contains('hidden')) {
+                    listeningIndicator.classList.add('loading-pulse');
+                    setTimeout(() => {
+                        if (listeningIndicator.classList.contains('loading-pulse')) {
+                            listeningIndicator.classList.remove('loading-pulse');
+                        }
+                    }, 500);
+                }
             };
 
             recognition.onstart = () => {
@@ -466,14 +486,14 @@
             recognition.onend = () => {
                 // When recognition ends automatically (e.g., timeout), restart if user wants to keep listening
                 if (isListening) {
-                    // Use a slight delay to prevent rapid restart loops
+                    // Try to restart immediately with the same settings to maintain microphone access
                     setTimeout(() => {
                         if (isListening) {
-                            // Reuse the same recognition instance to avoid permission prompts
+                            // Try to restart with a slight delay to maintain microphone access
                             recognition.lang = langSelect.value;
                             recognition.start();
                         }
-                    }, 500); // Longer delay to reduce restart frequency
+                    }, 100); // Very short delay to maintain continuity
                 } else {
                     // User intentionally stopped
                     listenText.textContent = 'เริ่มฟัง';
