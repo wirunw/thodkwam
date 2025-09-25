@@ -718,7 +718,23 @@
             } catch (err) {
                 console.error('Failed to copy segments: ', err);
                 alert('ไม่สามารถคัดลอกข้อความได้');
-            }\n            \n            saveButton.addEventListener('click', () => {\n                const textToSave = transcriptOutput.value;\n                if (textToSave) {\n                    const blob = new Blob([textToSave], { type: 'text/plain;charset=utf-8' });\n                    const url = URL.createObjectURL(blob);\n                    const a = document.createElement('a');\n                    a.href = url;\n                    a.download = 'ถอดความ_ทั้งหมด.txt';\n                    document.body.appendChild(a);\n                    a.click();\n                    document.body.removeChild(a);\n                    URL.revokeObjectURL(url);\n                }\n            });
+            }\n            document.body.removeChild(tempTextarea);
+            });
+            
+            saveButton.addEventListener('click', () => {
+                const textToSave = transcriptOutput.value;
+                if (textToSave) {
+                    const blob = new Blob([textToSave], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'ถอดความ_ทั้งหมด.txt';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
+            });
 
             readAloudButton.addEventListener('click', () => {
                 if (synth.speaking) {
