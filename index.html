@@ -373,6 +373,9 @@
                         optgroup.appendChild(option);
                     });
                     voiceSelect.appendChild(optgroup);
+                    
+                    // Set the first Thai voice as default if available
+                    voiceSelect.selectedIndex = 1; // Skip the optgroup label
                 }
                 
                 const otherOptgroup = document.createElement('optgroup');
@@ -389,6 +392,9 @@
                 // Update voice selection placeholder if no voice is selected
                 if (voiceSelect.options.length === 0) {
                     voiceSelect.innerHTML = '<option value="">ไม่พบเสียงในระบบ</option>';
+                } else if (voiceSelect.selectedIndex === -1) {
+                    // If no Thai voices found, select the first available voice
+                    voiceSelect.selectedIndex = 0;
                 }
             }
 
@@ -433,7 +439,7 @@
             let isListening = false;
             let finalTranscript = '';
 
-            recognition.lang = langSelect.value;
+            recognition.lang = 'th-TH'; // Set default to Thai
             recognition.interimResults = true;
             recognition.continuous = true;
             
@@ -491,6 +497,9 @@
             langSelect.addEventListener('change', () => {
                 recognition.lang = langSelect.value;
             });
+            
+            // Set default language selection to Thai
+            langSelect.value = 'th-TH';
 
             copyButton.addEventListener('click', () => {
                 if (transcriptOutput.value) {
