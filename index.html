@@ -431,7 +431,7 @@
 
             recognition.lang = 'th-TH'; // Set default to Thai
             recognition.interimResults = true;
-            recognition.continuous = true; // Enable continuous recognition
+            recognition.continuous = false; // Disable continuous recognition to have better control
             
             function updateCounter() {
                 const count = transcriptOutput.value.length;
@@ -464,16 +464,16 @@
             };
 
             recognition.onend = () => {
-                // When recognition ends automatically, restart if user is still in listening mode
+                // When recognition ends automatically (e.g., timeout), restart if user wants to keep listening
                 if (isListening) {
                     setTimeout(() => {
                         if (isListening) {
                             recognition.lang = langSelect.value;
                             recognition.start();
                         }
-                    }, 100); // Small delay to prevent issues
+                    }, 300); // Slightly longer delay
                 } else {
-                    // Only update UI if user intentionally stopped
+                    // User intentionally stopped
                     listenText.textContent = 'เริ่มฟัง';
                     listenButton.classList.remove('text-red-600', 'border-red-300', 'hover:bg-red-50');
                     listenButton.classList.add('text-green-700', 'border-green-300', 'hover:bg-green-50');
@@ -484,14 +484,14 @@
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
                 if (event.error === 'no-speech') {
-                    // No speech detected, try to restart if still in listening mode
+                    // No speech detected, but continue listening if user wants to
                     if (isListening) {
                         setTimeout(() => {
                             if (isListening) {
                                 recognition.lang = langSelect.value;
                                 recognition.start();
                             }
-                        }, 200);
+                        }, 300);
                     }
                 } else if (event.error === 'audio-capture' || event.error === 'not-allowed' || event.error === 'service-not-allowed') {
                     isListening = false;
