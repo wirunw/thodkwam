@@ -107,6 +107,11 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
         }
+        
+        /* Segment styles */
+        .segment-item {
+            transition: all 0.3s ease;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
@@ -197,6 +202,14 @@
                     <div id="listening-indicator" class="hidden flex items-center justify-center gap-2 mt-4 text-red-600">
                         <div class="glowing-dot"></div>
                         <span class="font-medium">กำลังฟัง...</span>
+                    </div>
+                    
+                    <!-- Segment container -->
+                    <div id="segments-container" class="mt-4 space-y-3">
+                        <h3 class="text-sm font-medium text-gray-700">ช่วงที่บันทึกไว้:</h3>
+                        <div id="segments-list" class="space-y-2 max-h-60 overflow-y-auto">
+                            <!-- Saved segments will appear here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -583,35 +596,66 @@
             let savedSegments = [];
             
             const saveSegmentButton = document.getElementById('save-segment-button');
+            const segmentsList = document.getElementById('segments-list');
             
             saveSegmentButton.addEventListener('click', () => {
                 const currentText = transcriptOutput.value;
                 if (currentText.trim()) {
-                    // Save only the new text since last segment
-                    const newSegment = currentText;
+                    // Save the current text as a new segment
+                    const newSegment = {
+                        id: segmentCounter,
+                        text: currentText
+                    };
                     savedSegments.push(newSegment);
                     
-                    // Create a blob with all segments
-                    let content = '';
-                    for (let i = 0; i < savedSegments.length; i++) {
-                        content += '--- ช่วงที่ ' + (i + 1) + ' ---\n' + savedSegments[i] + '\n\n';
-                    }
+                    // Create a new textbox for this segment
+                    const segmentDiv = document.createElement('div');
+                    segmentDiv.className = 'segment-item bg-gray-50 p-3 rounded-lg border border-gray-200';
+                    segmentDiv.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-purple-700">ช่วงที่ ${segmentCounter}</span>
+                            <button class="delete-segment text-red-500 hover:text-red-700 text-sm" data-id="${segmentCounter}">
+                                <i class="fas fa-trash"></i> ลบ
+                            </button>
+                        </div>
+                        <div class="segment-content bg-white p-2 rounded border border-gray-300 min-h-[60px] max-h-40 overflow-y-auto">
+                            ${currentText}
+                        </div>
+                    `;
                     
-                    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'ถอดความ_ช่วง_' + segmentCounter + '.txt';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
+                    segmentsList.appendChild(segmentDiv);
+                    
+                    // Add event listener to the delete button
+                    const deleteBtn = segmentDiv.querySelector('.delete-segment');
+                    deleteBtn.addEventListener('click', function() {
+                        const segmentId = parseInt(this.getAttribute('data-id'));
+                        // Remove from the savedSegments array
+                        savedSegments = savedSegments.filter(segment => segment.id !== segmentId);
+                        // Remove the element from the DOM
+                        segmentDiv.remove();
+                        // Update segment numbering
+                        updateSegmentNumbers();
+                    });
                     
                     segmentCounter++;
                 } else {
                     alert('ไม่มีข้อความให้บันทึก');
                 }
             });
+            
+            // Function to renumber segments after deletion
+            function updateSegmentNumbers() {
+                const allSegments = segmentsList.querySelectorAll('.segment-item');
+                allSegments.forEach((segment, index) => {
+                    const span = segment.querySelector('span');
+                    span.textContent = `ช่วงที่ ${index + 1}`;
+                    const deleteBtn = segment.querySelector('.delete-segment');
+                    deleteBtn.setAttribute('data-id', index + 1);
+                    const segmentContent = segment.querySelector('.segment-content');
+                    savedSegments[index].id = index + 1;
+                });
+                segmentCounter = allSegments.length + 1;
+            }
             
             saveButton.addEventListener('click', () => {
                 const textToSave = transcriptOutput.value;
