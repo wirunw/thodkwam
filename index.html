@@ -305,6 +305,7 @@
             let isListening = false;
             let finalTranscript = '';
             let savedSegments = [];
+            let isResettingAfterSave = false; 
 
             recognition.lang = langSelect.value;
             recognition.interimResults = true;
@@ -371,6 +372,12 @@
             };
 
             recognition.onend = () => {
+                if (isResettingAfterSave) {
+                    isResettingAfterSave = false; 
+                    recognition.start(); 
+                    return; 
+                }
+
                 if (isListening) { 
                     setTimeout(() => { if (isListening) recognition.start(); }, 100);
                 } else {
@@ -406,14 +413,17 @@
 
             saveButton.addEventListener('click', () => {
                 const textToSave = transcriptOutput.value;
-                if (textToSave) {
+                if (textToSave.trim()) {
                     const blob = new Blob([textToSave], { type: 'text/plain;charset=utf-8' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
+                    a.style.display = 'none';
                     a.href = url;
                     a.download = 'transcript.txt';
+                    document.body.appendChild(a);
                     a.click();
-                    URL.revokeObjectURL(url);
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
                 }
             });
 
@@ -424,6 +434,11 @@
                     renderSegments();
                     finalTranscript = '';
                     transcriptOutput.value = '';
+                }
+
+                if (isListening) {
+                    isResettingAfterSave = true;
+                    recognition.stop();
                 }
             });
 
