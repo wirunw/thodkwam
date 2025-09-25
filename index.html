@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
@@ -718,7 +718,8 @@
             } catch (err) {
                 console.error('Failed to copy segments: ', err);
                 alert('ไม่สามารถคัดลอกข้อความได้');
-            }\n            document.body.removeChild(tempTextarea);
+            }
+            document.body.removeChild(tempTextarea);
             });
             
             saveButton.addEventListener('click', () => {
@@ -767,3 +768,4 @@
     </script>
 </body>
 </html>
+
