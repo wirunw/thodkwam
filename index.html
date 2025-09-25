@@ -423,13 +423,11 @@
             const readAloudButton = document.getElementById('read-aloud-button');
 
             let isListening = false;
-            let isUserStopped = false; // Track if user manually stopped
             let finalTranscript = '';
-            let restartTimeout = null; // Store timeout reference to prevent multiple restarts
 
             recognition.lang = 'th-TH'; // Set default to Thai
             recognition.interimResults = true;
-            recognition.continuous = true;
+            recognition.continuous = true; // Enable continuous recognition
             
             function updateCounter() {
                 const count = transcriptOutput.value.length;
@@ -437,23 +435,21 @@
             }
 
             recognition.onresult = (event) => {
-                let interimTranscript = '';
-                
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript + ' ';
+                        finalTranscript += transcript + ' ';
+                        transcriptOutput.value = finalTranscript;
                     } else {
-                        interimTranscript += event.results[i][0].transcript;
+                        // Show interim results together with final results
+                        transcriptOutput.value = finalTranscript + transcript;
                     }
                 }
-                
-                transcriptOutput.value = finalTranscript + interimTranscript;
                 updateCounter();
             };
 
             recognition.onstart = () => {
                 isListening = true;
-                isUserStopped = false; // Reset when actually starting
                 listenText.textContent = 'หยุดฟัง';
                 listenButton.classList.remove('text-green-700', 'border-green-300', 'hover:bg-green-50');
                 listenButton.classList.add('text-red-600', 'border-red-300', 'hover:bg-red-50');
@@ -461,56 +457,57 @@
             };
 
             recognition.onend = () => {
-                if (isUserStopped) {
-                    // User manually stopped
-                    isListening = false;
+                // When recognition ends automatically, restart if user is still in listening mode
+                if (isListening) {
+                    setTimeout(() => {
+                        if (isListening) {
+                            recognition.lang = langSelect.value;
+                            recognition.start();
+                        }
+                    }, 100); // Small delay to prevent issues
+                } else {
+                    // Only update UI if user intentionally stopped
                     listenText.textContent = 'เริ่มฟัง';
                     listenButton.classList.remove('text-red-600', 'border-red-300', 'hover:bg-red-50');
                     listenButton.classList.add('text-green-700', 'border-green-300', 'hover:bg-green-50');
                     listeningIndicator.classList.add('hidden');
-                } else {
-                    // Recognition ended automatically (e.g., timeout), restart after a delay
-                    if (restartTimeout) {
-                        clearTimeout(restartTimeout);
-                    }
-                    restartTimeout = setTimeout(() => {
-                        if (isListening && !isUserStopped) {
-                            recognition.lang = langSelect.value;
-                            recognition.start();
-                        }
-                    }, 300);
                 }
             };
 
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
-                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                    alert('โปรดอนุญาตให้เว็บไซต์เข้าถึงไมโครโฟนของคุณ');
-                    isUserStopped = true;
-                    recognition.stop();
-                } else if (event.error === 'no-speech' || event.error === 'audio-capture') {
-                    // If no speech detected or audio capture issues, try to restart
-                    if (isListening && !isUserStopped && !isUserStopped) {
+                if (event.error === 'no-speech') {
+                    // No speech detected, try to restart if still in listening mode
+                    if (isListening) {
                         setTimeout(() => {
-                            if (isListening && !isUserStopped) {
+                            if (isListening) {
                                 recognition.lang = langSelect.value;
                                 recognition.start();
                             }
-                        }, 500);
+                        }, 200);
                     }
+                } else if (event.error === 'audio-capture' || event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                    alert('โปรดอนุญาตให้เว็บไซต์เข้าถึงไมโครโฟนของคุณ');
+                    isListening = false;
+                    listenText.textContent = 'เริ่มฟัง';
+                    listenButton.classList.remove('text-red-600', 'border-red-300', 'hover:bg-red-50');
+                    listenButton.classList.add('text-green-700', 'border-green-300', 'hover:bg-green-50');
+                    listeningIndicator.classList.add('hidden');
                 }
             };
 
             listenButton.addEventListener('click', () => {
                 if (isListening) {
                     // User manually stopping
-                    isUserStopped = true;
-                    if (restartTimeout) {
-                        clearTimeout(restartTimeout);
-                    }
+                    isListening = false;
                     recognition.stop();
                 } else {
                     // User starting
+                    finalTranscript = transcriptOutput.value;
+                    if (finalTranscript && !finalTranscript.endsWith(' ')) {
+                        finalTranscript += ' ';
+                    }
+                    isListening = true;
                     recognition.lang = langSelect.value;
                     recognition.start();
                 }
