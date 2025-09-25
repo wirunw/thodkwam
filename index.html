@@ -494,12 +494,12 @@
                         }, 200);
                     }
                 } else if (event.error === 'audio-capture' || event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                    alert('โปรดอนุญาตให้เว็บไซต์เข้าถึงไมโครโฟนของคุณ');
                     isListening = false;
                     listenText.textContent = 'เริ่มฟัง';
                     listenButton.classList.remove('text-red-600', 'border-red-300', 'hover:bg-red-50');
                     listenButton.classList.add('text-green-700', 'border-green-300', 'hover:bg-green-50');
                     listeningIndicator.classList.add('hidden');
+                    alert('โปรดอนุญาตให้เว็บไซต์เข้าถึงไมโครโฟนของคุณ');
                 }
             };
 
@@ -550,6 +550,10 @@
                 finalTranscript = '';
                 transcriptOutput.value = '';
                 updateCounter();
+                // Only reset if not currently listening
+                if (!isListening) {
+                    finalTranscript = '';
+                }
             });
 
             // Segment saving functionality
