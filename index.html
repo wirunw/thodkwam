@@ -618,9 +618,14 @@
                     segmentDiv.innerHTML = `
                         <div class="flex justify-between items-center mb-2">
                             <span class="text-sm font-medium text-purple-700">ช่วงที่ ${segmentCounter}</span>
-                            <button class="delete-segment text-red-500 hover:text-red-700 text-sm" data-id="${segmentCounter}">
-                                <i class="fas fa-trash"></i> ลบ
-                            </button>
+                            <div class="flex space-x-2">
+                                <button class="copy-segment text-blue-500 hover:text-blue-700 text-sm">
+                                    <i class="fas fa-copy"></i> คัดลอก
+                                </button>
+                                <button class="delete-segment text-red-500 hover:text-red-700 text-sm" data-id="${segmentCounter}">
+                                    <i class="fas fa-trash"></i> ลบ
+                                </button>
+                            </div>
                         </div>
                         <div class="segment-content bg-white p-2 rounded border border-gray-300 min-h-[60px] max-h-40 overflow-y-auto">
                             ${currentText}
@@ -628,6 +633,32 @@
                     `;
                     
                     segmentsList.appendChild(segmentDiv);
+                    
+                    // Add event listener to the copy button
+                    const copyBtn = segmentDiv.querySelector('.copy-segment');
+                    copyBtn.addEventListener('click', function() {
+                        const segmentText = segmentDiv.querySelector('.segment-content').textContent;
+                        const tempTextarea = document.createElement('textarea');
+                        tempTextarea.value = segmentText;
+                        document.body.appendChild(tempTextarea);
+                        tempTextarea.select();
+                        tempTextarea.setSelectionRange(0, 99999);
+                        
+                        try {
+                            document.execCommand('copy');
+                            // Provide visual feedback
+                            const originalText = copyBtn.innerHTML;
+                            copyBtn.innerHTML = '<i class="fas fa-check"></i> คัดลอกแล้ว';
+                            setTimeout(() => {
+                                copyBtn.innerHTML = originalText;
+                            }, 2000);
+                        } catch (err) {
+                            console.error('Failed to copy segment: ', err);
+                            alert('ไม่สามารถคัดลอกข้อความได้');
+                        }
+                        
+                        document.body.removeChild(tempTextarea);
+                    });
                     
                     // Add event listener to the delete button
                     const deleteBtn = segmentDiv.querySelector('.delete-segment');
