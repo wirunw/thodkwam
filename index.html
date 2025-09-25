@@ -446,6 +446,9 @@
                     }
                 }
                 updateCounter();
+                
+                // Auto-scroll to the end to show the latest text
+                transcriptOutput.scrollTop = transcriptOutput.scrollHeight;
             };
 
             recognition.onstart = () => {
@@ -575,7 +578,17 @@
                 }
             });
             
-            transcriptOutput.addEventListener('input', updateCounter);
+            // Add auto-scroll to text-to-speak textarea as well
+            textToSpeakInput.addEventListener('input', function() {
+                // Auto-scroll to the end when user types
+                textToSpeakInput.scrollTop = textToSpeakInput.scrollHeight;
+            });
+            
+            transcriptOutput.addEventListener('input', function() {
+                updateCounter();
+                // Auto-scroll to the end when user types
+                transcriptOutput.scrollTop = transcriptOutput.scrollHeight;
+            });
             updateCounter();
         });
     </script>
