@@ -431,7 +431,7 @@
 
             recognition.lang = 'th-TH'; // Set default to Thai
             recognition.interimResults = true;
-            recognition.continuous = false; // Disable continuous recognition to have better control
+            recognition.continuous = true; // Enable continuous recognition to avoid repeated permission prompts
             
             function updateCounter() {
                 const count = transcriptOutput.value.length;
@@ -466,12 +466,14 @@
             recognition.onend = () => {
                 // When recognition ends automatically (e.g., timeout), restart if user wants to keep listening
                 if (isListening) {
+                    // Use a slight delay to prevent rapid restart loops
                     setTimeout(() => {
                         if (isListening) {
+                            // Reuse the same recognition instance to avoid permission prompts
                             recognition.lang = langSelect.value;
                             recognition.start();
                         }
-                    }, 300); // Slightly longer delay
+                    }, 500); // Longer delay to reduce restart frequency
                 } else {
                     // User intentionally stopped
                     listenText.textContent = 'เริ่มฟัง';
@@ -484,22 +486,22 @@
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
                 if (event.error === 'no-speech') {
-                    // No speech detected, but continue listening if user wants to
-                    if (isListening) {
-                        setTimeout(() => {
-                            if (isListening) {
-                                recognition.lang = langSelect.value;
-                                recognition.start();
-                            }
-                        }, 300);
-                    }
-                } else if (event.error === 'audio-capture' || event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                    // For 'no-speech' errors, in continuous mode we just continue
+                    // The recognition will automatically continue when speech is detected
+                } else if (event.error === 'audio-capture' || event.error === 'not-allowed') {
                     isListening = false;
                     listenText.textContent = 'เริ่มฟัง';
                     listenButton.classList.remove('text-red-600', 'border-red-300', 'hover:bg-red-50');
                     listenButton.classList.add('text-green-700', 'border-green-300', 'hover:bg-green-50');
                     listeningIndicator.classList.add('hidden');
                     alert('โปรดอนุญาตให้เว็บไซต์เข้าถึงไมโครโฟนของคุณ');
+                } else if (event.error === 'service-not-allowed') {
+                    isListening = false;
+                    listenText.textContent = 'เริ่มฟัง';
+                    listenButton.classList.remove('text-red-600', 'border-red-300', 'hover:bg-red-50');
+                    listenButton.classList.add('text-green-700', 'border-green-300', 'hover:bg-green-50');
+                    listeningIndicator.classList.add('hidden');
+                    alert('บริการเสียงพูดไม่ได้รับอนุญาตในเบราว์เซอร์ของคุณ');
                 }
             };
 
