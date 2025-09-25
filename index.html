@@ -703,7 +703,18 @@
                 segmentCounter = allSegments.length + 1;
             }
             
-            // Add event listener for copy all segments button\n            const copyAllSegmentsButton = document.getElementById('copy-all-segments');\n            \n            copyAllSegmentsButton.addEventListener('click', () => {\n                if (savedSegments.length === 0) {\n                    alert('ยังไม่มีช่วงข้อความที่บันทึกไว้');\n                    return;\n                }\n                \n                // Combine all segments with clear separators\n                let allSegmentsText = '';\n                savedSegments.forEach((segment, index) => {\n                    allSegmentsText += `--- ช่วงที่ ${index + 1} ---\\n${segment.text}\\n\\n`;\n                });\n                \n                // Create a temporary textarea to copy the text\n                const tempTextarea = document.createElement('textarea');\n                tempTextarea.value = allSegmentsText;\n                document.body.appendChild(tempTextarea);\n                tempTextarea.select();\n                tempTextarea.setSelectionRange(0, 99999); // For mobile devices\n                \n                try {\n                    document.execCommand('copy');\n                    alert(`คัดลอก ${savedSegments.length} ช่วงเรียบร้อยแล้ว!`);\n                } catch (err) {\n                    console.error('Failed to copy segments: ', err);\n                    alert('ไม่สามารถคัดลอกข้อความได้');\n                }\n                \n                document.body.removeChild(tempTextarea);\n            });\n            \n            saveButton.addEventListener('click', () => {\n                const textToSave = transcriptOutput.value;\n                if (textToSave) {\n                    const blob = new Blob([textToSave], { type: 'text/plain;charset=utf-8' });\n                    const url = URL.createObjectURL(blob);\n                    const a = document.createElement('a');\n                    a.href = url;\n                    a.download = 'ถอดความ_ทั้งหมด.txt';\n                    document.body.appendChild(a);\n                    a.click();\n                    document.body.removeChild(a);\n                    URL.revokeObjectURL(url);\n                }\n            });
+            try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        alert('คัดลอก ' + savedSegments.length + ' ช่วงเรียบร้อยแล้ว!');
+                    } else {
+                        console.error('Copy command failed');
+                        alert('ไม่สามารถคัดลอกข้อความได้');
+                    }
+                } catch (err) {
+                    console.error('Failed to copy segments: ', err);
+                    alert('ไม่สามารถคัดลอกข้อความได้');
+                }\n            \n            saveButton.addEventListener('click', () => {\n                const textToSave = transcriptOutput.value;\n                if (textToSave) {\n                    const blob = new Blob([textToSave], { type: 'text/plain;charset=utf-8' });\n                    const url = URL.createObjectURL(blob);\n                    const a = document.createElement('a');\n                    a.href = url;\n                    a.download = 'ถอดความ_ทั้งหมด.txt';\n                    document.body.appendChild(a);\n                    a.click();\n                    document.body.removeChild(a);\n                    URL.revokeObjectURL(url);\n                }\n            });
 
             readAloudButton.addEventListener('click', () => {
                 if (synth.speaking) {
