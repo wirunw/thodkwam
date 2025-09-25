@@ -686,13 +686,19 @@
             // Function to renumber segments after deletion
             function updateSegmentNumbers() {
                 const allSegments = segmentsList.querySelectorAll('.segment-item');
+                // Create a new savedSegments array based on the current DOM order
+                savedSegments = [];
                 allSegments.forEach((segment, index) => {
                     const span = segment.querySelector('span');
                     span.textContent = `ช่วงที่ ${index + 1}`;
                     const deleteBtn = segment.querySelector('.delete-segment');
                     deleteBtn.setAttribute('data-id', index + 1);
-                    const segmentContent = segment.querySelector('.segment-content');
-                    savedSegments[index].id = index + 1;
+                    // Update the segment ID and add to the new array
+                    const segmentContent = segment.querySelector('.segment-content').textContent;
+                    savedSegments.push({
+                        id: index + 1,
+                        text: segmentContent
+                    });
                 });
                 segmentCounter = allSegments.length + 1;
             }
