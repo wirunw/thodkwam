@@ -615,22 +615,21 @@
                     // Create a new textbox for this segment
                     const segmentDiv = document.createElement('div');
                     segmentDiv.className = 'segment-item bg-gray-50 p-3 rounded-lg border border-gray-200';
-                    segmentDiv.innerHTML = `
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-sm font-medium text-purple-700">ช่วงที่ ${segmentCounter}</span>
-                            <div class="flex space-x-2">
-                                <button class="copy-segment text-blue-500 hover:text-blue-700 text-sm">
-                                    <i class="fas fa-copy"></i> คัดลอก
-                                </button>
-                                <button class="delete-segment text-red-500 hover:text-red-700 text-sm" data-id="${segmentCounter}">
-                                    <i class="fas fa-trash"></i> ลบ
-                                </button>
-                            </div>
-                        </div>
-                        <div class="segment-content bg-white p-2 rounded border border-gray-300 min-h-[60px] max-h-40 overflow-y-auto">
-                            ${currentText}
-                        </div>
-                    `;
+                    const segmentHTML = '<div class="flex justify-between items-center mb-2">' +
+                        '<span class="text-sm font-medium text-purple-700">ช่วงที่ ' + segmentCounter + '</span>' +
+                        '<div class="flex space-x-2">' +
+                            '<button class="copy-segment text-blue-500 hover:text-blue-700 text-sm">' +
+                                '<i class="fas fa-copy"></i> คัดลอก' +
+                            '</button>' +
+                            '<button class="delete-segment text-red-500 hover:text-red-700 text-sm" data-id="' + segmentCounter + '">' +
+                                '<i class="fas fa-trash"></i> ลบ' +
+                            '</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="segment-content bg-white p-2 rounded border border-gray-300 min-h-[60px] max-h-40 overflow-y-auto">' +
+                        currentText +
+                    '</div>';
+                    segmentDiv.innerHTML = segmentHTML;
                     
                     segmentsList.appendChild(segmentDiv);
                     
@@ -704,17 +703,22 @@
             }
             
             try {
-                    const successful = document.execCommand('copy');
-                    if (successful) {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    navigator.clipboard.writeText(allSegmentsText).then(() => {
                         alert('คัดลอก ' + savedSegments.length + ' ช่วงเรียบร้อยแล้ว!');
-                    } else {
-                        console.error('Copy command failed');
+                    }).catch(err => {
+                        console.error('Failed to copy segments: ', err);
                         alert('ไม่สามารถคัดลอกข้อความได้');
-                    }
-                } catch (err) {
-                    console.error('Failed to copy segments: ', err);
+                    });
+                } else {
+                    console.error('Copy command failed');
                     alert('ไม่สามารถคัดลอกข้อความได้');
-                }\n            \n            saveButton.addEventListener('click', () => {\n                const textToSave = transcriptOutput.value;\n                if (textToSave) {\n                    const blob = new Blob([textToSave], { type: 'text/plain;charset=utf-8' });\n                    const url = URL.createObjectURL(blob);\n                    const a = document.createElement('a');\n                    a.href = url;\n                    a.download = 'ถอดความ_ทั้งหมด.txt';\n                    document.body.appendChild(a);\n                    a.click();\n                    document.body.removeChild(a);\n                    URL.revokeObjectURL(url);\n                }\n            });
+                }
+            } catch (err) {
+                console.error('Failed to copy segments: ', err);
+                alert('ไม่สามารถคัดลอกข้อความได้');
+            }\n            \n            saveButton.addEventListener('click', () => {\n                const textToSave = transcriptOutput.value;\n                if (textToSave) {\n                    const blob = new Blob([textToSave], { type: 'text/plain;charset=utf-8' });\n                    const url = URL.createObjectURL(blob);\n                    const a = document.createElement('a');\n                    a.href = url;\n                    a.download = 'ถอดความ_ทั้งหมด.txt';\n                    document.body.appendChild(a);\n                    a.click();\n                    document.body.removeChild(a);\n                    URL.revokeObjectURL(url);\n                }\n            });
 
             readAloudButton.addEventListener('click', () => {
                 if (synth.speaking) {
