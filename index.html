@@ -441,7 +441,8 @@
             const readAloudButton = document.getElementById('read-aloud-button');
 
             let isListening = false;
-            let finalTranscript = '';
+            let isUserStopped = false; // Track if user manually stopped
+            let previousTranscript = ''; // Store the transcript before recognition restarts
 
             recognition.lang = 'th-TH'; // Set default to Thai
             recognition.interimResults = true;
@@ -454,14 +455,38 @@
 
             recognition.onresult = (event) => {
                 let interimTranscript = '';
+                let newFinalTranscript = '';
+
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript + ' ';
+                        newFinalTranscript += event.results[i][0].transcript + ' ';
                     } else {
                         interimTranscript += event.results[i][0].transcript;
                     }
                 }
-                transcriptOutput.value = finalTranscript + interimTranscript;
+
+                // Only append new final transcript to previous, avoiding duplication
+                const currentText = transcriptOutput.value;
+                const startIndex = currentText.lastIndexOf(previousTranscript);
+                
+                if (startIndex === -1 || previousTranscript === '') {
+                    // If previous transcript is not found in current text, append new final transcript
+                    transcriptOutput.value = currentText + newFinalTranscript;
+                } else {
+                    // Replace the previous transcript with the new one to avoid duplication
+                    const newText = currentText.substring(0, startIndex) + 
+                                   currentText.substring(startIndex + previousTranscript.length) + 
+                                   newFinalTranscript;
+                    transcriptOutput.value = newText;
+                }
+                
+                // Update the previous transcript for next comparison
+                previousTranscript = newFinalTranscript;
+                
+                if (interimTranscript) {
+                    transcriptOutput.value += interimTranscript;
+                }
+                
                 updateCounter();
             };
 
@@ -471,28 +496,59 @@
                 listenButton.classList.remove('text-green-600', 'border-green-200', 'hover:bg-green-50');
                 listenButton.classList.add('text-red-600', 'border-red-200', 'hover:bg-red-50');
                 listeningIndicator.classList.remove('hidden');
-                finalTranscript = transcriptOutput.value; 
             };
 
             recognition.onend = () => {
-                isListening = false;
-                listenText.textContent = 'เริ่มฟัง';
-                listenButton.classList.remove('text-red-600', 'border-red-200', 'hover:bg-red-50');
-                listenButton.classList.add('text-green-600', 'border-green-200', 'hover:bg-green-50');
-                listeningIndicator.classList.add('hidden');
+                // Check if the user manually stopped before handling auto-restart
+                if (isUserStopped) {
+                    // User manually stopped, reset the flag and don't restart
+                    isUserStopped = false;
+                    isListening = false;
+                    listenText.textContent = 'เริ่มฟัง';
+                    listenButton.classList.remove('text-red-600', 'border-red-200', 'hover:bg-red-50');
+                    listenButton.classList.add('text-green-600', 'border-green-200', 'hover:bg-green-50');
+                    listeningIndicator.classList.add('hidden');
+                } else {
+                    // Recognition stopped automatically (e.g., by browser), restart if still in listening mode
+                    if (isListening) {
+                        // Add a small delay before restarting to avoid rapid restart loops
+                        setTimeout(() => {
+                            if (isListening && !isUserStopped) {
+                                recognition.lang = langSelect.value;
+                                recognition.start();
+                            }
+                        }, 300);
+                    }
+                }
             };
 
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
                 if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
                     alert('โปรดอนุญาตให้เว็บไซต์เข้าถึงไมโครโฟนของคุณ');
+                    isUserStopped = true; // Treat as user stopped on permission error
+                } else if (event.error === 'no-speech') {
+                    // No speech detected, continue listening if user hasn't stopped
+                    if (isListening && !isUserStopped) {
+                        setTimeout(() => {
+                            if (isListening && !isUserStopped) {
+                                recognition.lang = langSelect.value;
+                                recognition.start();
+                            }
+                        }, 300);
+                    }
                 }
             };
 
             listenButton.addEventListener('click', () => {
                 if (isListening) {
+                    // User manually stopping
+                    isUserStopped = true;
                     recognition.stop();
                 } else {
+                    // User starting
+                    isUserStopped = false;
+                    isListening = true;
                     recognition.lang = langSelect.value;
                     recognition.start();
                 }
@@ -528,7 +584,7 @@
             });
 
             clearButton.addEventListener('click', () => {
-                finalTranscript = '';
+                previousTranscript = '';
                 transcriptOutput.value = '';
                 updateCounter();
             });
